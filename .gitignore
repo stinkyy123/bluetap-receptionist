@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+worker/node_modules/
+
+# secrets / credentials — NEVER commit
+.env
+.dev.vars
+*.pem
+*.key
+# legacy helper scripts that contain hardcoded credentials
+patch_worker_url.js
+worker/get_google_token.js
+
+# legacy n8n / vapi exports and scratch payloads (may contain secrets)
+*.json
+!package.json
+!package-lock.json
+
+# superseded prompt/script drafts
+current_prompt.txt
+vapi_live_prompt_v13.txt
+vapi_live_prompt_v14.txt
+vapi_assistant.txt
+checkavail_compute_new.js
+
+# os / editor
+.DS_Store
+Thumbs.db

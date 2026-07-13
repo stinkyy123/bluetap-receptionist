@@ -1,0 +1,14 @@
+name = "bluetap-receptionist"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# No-reply confirmation sweeper runs every 5 minutes
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Non-secret config. Set SHEETS_ID to the VA-queue spreadsheet id.
+# Secrets (set via `wrangler secret put`): GOOGLE_SERVICE_ACCOUNT, TWILIO_SID,
+# TWILIO_AUTH_TOKEN, SMARTY_AUTH_ID, SMARTY_AUTH_TOKEN, TOOL_SECRET
+# TOOL_SECRET gates the /t/<secret> tool endpoint; Retell tool URLs must carry it.
+[vars]
+SHEETS_ID = "1fi44BbfsX68CcPGhn99gulCccCuAV3b4ywzWPTREK6E"
