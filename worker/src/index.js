@@ -29,8 +29,10 @@ const BUSINESS = {
   baseUrl: "https://bluetap-receptionist.hbrks56.workers.dev",
   noReplyTimeoutMin: 15,           // pending window before soft-confirm/flag
   reminderLeadHours: 3,            // send the reminder SMS this long before the appt
-  // services that always warrant a human glance before dispatch (high ticket)
-  highTicketKeywords: ["water heater", "replacement", "repipe", "main line", "hydrojet", "install"],
+  // services that always warrant a human glance before dispatch (high ticket).
+  // NOTE: bare "replacement" was removed — it flagged $199 faucet/toilet swaps;
+  // the genuinely expensive jobs are covered by the specific keywords below.
+  highTicketKeywords: ["water heater", "repipe", "main line", "hydrojet", "install"],
   // an emergency must NEVER land on the calendar as a normal booking — if any of
   // these surface in a bookAppointment call, the backstage guardrail reroutes it
   emergencyKeywords: ["flood", "flooding", "burst", "sewage", "gas smell", "gas leak",
@@ -487,8 +489,11 @@ async function verifyBookingBackstage(b, env) {
     let canonicalAddress = spokenAddr;
     if (usps.checked && usps.deliverable) {
       canonicalAddress = usps.standardized;
-      const line1 = (usps.standardized.split(",")[0] || usps.standardized);
-      if (!(usps.dpv === "Y" && addressPreserved(spokenAddr, line1))) {
+      // dpv "Y" = USPS-confirmed EXACT deliverable point: trust Smarty's
+      // standardization fully (e.g. spoken "Fox Run" -> real "Fox Runn Dr"),
+      // no flag — the confirm SMS still shows it for the customer to eyeball.
+      // Only a non-exact deliverable (dpv S/D) is soft-flagged for confirmation.
+      if (usps.dpv !== "Y") {
         flagReasons.push(`address_autocorrected(${usps.standardized})`);
       }
     }
