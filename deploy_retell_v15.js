@@ -111,8 +111,12 @@ const tools = [
   // volume, or backchannel — dashboard edits to those survive a run of this script.
   console.log('Patching agent turn-taking settings...');
   const a = await retellRequest('PATCH', '/update-agent/' + AGENT_ID, {
-    interruption_sensitivity: 0.75,  // v54 value; agent yields when the caller talks
-    responsiveness: 1,               // v54 default; snappy responses
+    // Low so the agent plows through acoustic echo (caller's phone looping the
+    // agent's own voice back) instead of thinking it was interrupted and
+    // restarting. Tradeoff: a real caller has to speak clearly to cut in.
+    interruption_sensitivity: 0.3,
+    responsiveness: 1,               // snappy responses
+    enable_backchannel: false,       // no "mm-hm" reacting to the echo
     ambient_sound: null              // no background track — cleaner transcription, less to echo
   });
   console.log('Agent PATCH status:', a.status);
