@@ -350,6 +350,24 @@ the reminder SMS (touch 2).
   route (returns the last few rows as JSON) is added, used, and then removed. It is
   currently **removed** — re-add it the same way if you need to inspect live rows, and
   delete it after.
+- **⚠️ Schedule + fee rules are PROMPT-TEXT ONLY — the Worker does NOT enforce them.** The
+  Worker enforces exactly two schedule facts: `businessStartH` and `businessEndH`. Everything
+  else a client tells you about their hours — **"Sun emergencies only", the same-day cutoff,
+  the latest same-day slot, the minimum fee** — lives only in the prompt's `FACTS` block. The
+  model is *asked* to respect them, but nothing checks: if it proposes a Sunday 8 AM slot,
+  `checkAvailability` will happily report it free and `bookAppointment` will book it. Treat
+  the prompt as advisory here, not as a constraint.
+  The client config now carries a structured `schedule` block (per-day `days`, `emergencyOnlyDays`,
+  `sameDayCutoffH`, `latestSameDaySlotH`, `minFee`, `minFeeWaivedWithRepair`) — **the Worker
+  does not read it yet.** It was added so the schema change happened once.
+  **NEXT TASK: worker-side enforcement of per-day schedule rules from `BUSINESS.schedule`** —
+  `checkAvailability` should treat closed days / post-cutoff / past-latest-slot as busy, and the
+  emergency path should stay open on `emergencyOnlyDays`. Until then, a client with anything more
+  complex than "same hours every day" is only *softly* protected.
+- **Config-logic traps are checked, not prevented.** `validate-config.js` flags the two that bite:
+  an `emergencyKeyword` that also names a normal service (that service becomes unbookable — the
+  guardrail reroutes it), and a `highTicketKeyword` that matches a cheap job (the "$199 faucet
+  swap" over-flagging footgun). Run it before every build; the decisions are the owner's.
 - **Open items:** rotate the leaked **Retell API key** (hardcoded in the gitignored
   `patch_worker_url.js`, and pasted in chat) and the **Google OAuth secret** (gitignored
   `get_google_token.js`); delete cosmetic test rows in the Bookings sheet; the legacy n8n

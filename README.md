@@ -44,12 +44,32 @@ RETELL_API_KEY=… TOOL_SECRET=… node deploy_retell.js <client> # 2. push prom
 ```
 Skipping the re-pin ships to a draft nobody calls. Read BUILD-NOTES §2 in full.
 
+## Sanity-check a config (run this BEFORE building)
+```bash
+node validate-config.js <client>    # exits 1 on a HIGH finding
+```
+Catches the config-logic traps the code can't. The two that bite:
+- an **`emergencyKeyword` that also names a normal service** → the worker's guardrail reroutes
+  every such call to emergency-callback, so **that service can never be booked**;
+- a **`highTicketKeyword` matching a cheap job** → the documented "$199 faucet swap"
+  over-flagging footgun.
+
+These are business decisions, so it reports them — it doesn't "fix" them.
+
 ## Add a new client
-1. Copy `clients/bluetap/config.json` → `clients/<client>/config.json`; fill in their values
-   (validate against `schema/client-config.schema.json`).
-2. Stand up the client-owned accounts (Retell, Twilio + A2P 10DLC, Google Calendar/Sheets) —
-   these are human/provisioning steps; put the resulting IDs in the config.
-3. `node render.js <client>` → review the dist → deploy (above) → run the QA scenarios.
+1. Copy `clients/bluetap/config.json` → `clients/<client>/config.json`; fill in their values.
+   Trade-specific: set `emergencyScreenQuestion` and `emergencyExamples` for **their** trade —
+   the defaults are plumbing (an HVAC agent must not screen callers for sewage backups).
+2. `node validate-config.js <client>` → resolve any HIGH findings with the owner.
+3. Stand up the client-owned accounts (Retell, Twilio + A2P 10DLC, Google Calendar/Sheets) —
+   human/provisioning steps; put the resulting IDs in the config. (`render.js` refuses to
+   green-light a deploy while `TODO` values remain.)
+4. `node render.js <client>` → review the dist → deploy (above) → run the QA scenarios.
+
+> ⚠️ Hours caveat: the worker enforces only `businessStartH`/`businessEndH`. Per-day rules
+> ("Sun emergencies only"), the same-day cutoff, latest slot, and min fee are **prompt-text
+> only** today — see BUILD-NOTES "Known limitations". `schedule` is in the config ready for
+> worker-side enforcement (next task).
 
 Real client configs are **gitignored** (they contain client PII) — only the bluetap reference
 and the schema are committed. This repo is public: **never commit secrets** (BUILD-NOTES §8;

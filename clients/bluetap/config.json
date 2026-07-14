@@ -56,6 +56,44 @@
   "workerName": "bluetap-receptionist",
   "retellLlmId": "llm_b87d28588b771499db90d726e1f7",
   "retellAgentId": "agent_a0816d675497be6750760cf772",
+  "emergencyScreenQuestion": "Any active flooding, sewage, or gas smell?",
+  "emergencyExamples": "burst pipe, flooding, sewage, gas smell, no water, ceiling collapse",
+  "schedule": {
+    "days": {
+      "mon": {
+        "open": 7,
+        "close": 19
+      },
+      "tue": {
+        "open": 7,
+        "close": 19
+      },
+      "wed": {
+        "open": 7,
+        "close": 19
+      },
+      "thu": {
+        "open": 7,
+        "close": 19
+      },
+      "fri": {
+        "open": 7,
+        "close": 19
+      },
+      "sat": {
+        "open": 7,
+        "close": 19
+      },
+      "sun": null
+    },
+    "emergencyOnlyDays": [
+      "sun"
+    ],
+    "sameDayCutoffH": 16,
+    "latestSameDaySlotH": 17,
+    "minFee": 79,
+    "minFeeWaivedWithRepair": true
+  },
   "prompt": {
     "factsLines": [
       "- Hours: Mon–Sat 7AM–7PM; Sun emergencies only. Service area: Lynchburg, Forest, Madison Heights, Timberlake VA (ZIP 24501–24506).",

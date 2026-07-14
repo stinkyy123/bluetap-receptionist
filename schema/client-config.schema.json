@@ -10,8 +10,26 @@
     "meetingMin", "businessStartH", "businessEndH", "bufferMin", "twilioFrom",
     "defaultState", "sheetTab", "baseUrl", "noReplyTimeoutMin", "reminderLeadHours",
     "highTicketKeywords", "emergencyKeywords", "serviceCities",
+    "emergencyScreenQuestion", "emergencyExamples", "schedule",
     "sheetsId", "workerName", "retellLlmId", "retellAgentId", "prompt"
   ],
+  "definitions": {
+    "dayHours": {
+      "description": "Open/close hour for a day, or null if closed.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["open", "close"],
+          "properties": {
+            "open": { "type": "integer", "minimum": 0, "maximum": 23 },
+            "close": { "type": "integer", "minimum": 0, "maximum": 23 }
+          }
+        }
+      ]
+    }
+  },
   "properties": {
     "name": { "type": "string", "description": "Full legal/brand business name, e.g. 'BlueTap Plumbing & Drain'." },
     "shortName": { "type": "string", "description": "Conversational name used in the greeting." },
@@ -37,6 +55,41 @@
     "highTicketKeywords": { "type": "array", "items": { "type": "string" }, "description": "Services warranting a human glance (high ticket)." },
     "emergencyKeywords": { "type": "array", "items": { "type": "string" }, "description": "Words that force the emergency guardrail (never calendar-booked)." },
     "serviceCities": { "type": "array", "items": { "type": "string" }, "description": "Lowercase service-area localities for address locality detection." },
+    "emergencyScreenQuestion": {
+      "type": "string",
+      "description": "TRADE-SPECIFIC. The one-line emergency screen the agent asks (e.g. plumbing: 'Any active flooding, sewage, or gas smell?'; HVAC: 'Any gas smell, burning smell, or no cooling with someone vulnerable at home?'). Ask this in the questionnaire."
+    },
+    "emergencyExamples": {
+      "type": "string",
+      "description": "TRADE-SPECIFIC. Comma-joined examples that define the EMERGENCY off-path route (e.g. plumbing: 'burst pipe, flooding, sewage, gas smell, no water, ceiling collapse'). Ask this in the questionnaire."
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["days", "emergencyOnlyDays", "sameDayCutoffH", "latestSameDaySlotH", "minFee", "minFeeWaivedWithRepair"],
+      "description": "Structured schedule + fee rules. ⚠️ NOT YET ENFORCED BY THE WORKER — today these are prompt-text only (the worker enforces just businessStartH/businessEndH). Reserved for worker-side enforcement (next task). See BUILD-NOTES 'Known limitations'.",
+      "properties": {
+        "days": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Per-day open/close hour (24h). null = closed that day.",
+          "properties": {
+            "mon": { "$ref": "#/definitions/dayHours" },
+            "tue": { "$ref": "#/definitions/dayHours" },
+            "wed": { "$ref": "#/definitions/dayHours" },
+            "thu": { "$ref": "#/definitions/dayHours" },
+            "fri": { "$ref": "#/definitions/dayHours" },
+            "sat": { "$ref": "#/definitions/dayHours" },
+            "sun": { "$ref": "#/definitions/dayHours" }
+          }
+        },
+        "emergencyOnlyDays": { "type": "array", "items": { "type": "string" }, "description": "Days closed to normal booking but open to emergencies, e.g. ['sun']." },
+        "sameDayCutoffH": { "type": "integer", "minimum": 0, "maximum": 23, "description": "After this hour, no same-day booking (24h)." },
+        "latestSameDaySlotH": { "type": "integer", "minimum": 0, "maximum": 23, "description": "Latest same-day slot start (24h)." },
+        "minFee": { "type": "number", "description": "Minimum/service-call fee." },
+        "minFeeWaivedWithRepair": { "type": "boolean" }
+      }
+    },
     "sheetsId": { "type": "string", "description": "Google Sheets spreadsheet id (wrangler SHEETS_ID)." },
     "workerName": { "type": "string", "description": "Cloudflare Worker name (wrangler `name`)." },
     "retellLlmId": { "type": "string", "description": "Retell LLM id the deploy script pushes to." },
