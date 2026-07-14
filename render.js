@@ -14,6 +14,8 @@ const cfgPath = path.join(root, 'clients', client, 'config.json');
 const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
 
 const ARRAY_KEYS = ['highTicketKeywords', 'emergencyKeywords', 'serviceCities'];
+// Injected into the worker as a JSON object literal (not a scalar).
+const OBJECT_KEYS = ['schedule'];
 
 // Format an array the way the source hand-wrote scalars: ["a", "b"] (comma + space).
 function arr(a) { return '[' + a.map(x => JSON.stringify(x)).join(', ') + ']'; }
@@ -26,9 +28,11 @@ function fill(text, eol) {
   }
   // arrays (worker only)
   for (const k of ARRAY_KEYS) if (cfg[k]) text = text.split('@@' + k + '@@').join(arr(cfg[k]));
+  // objects (worker only) — emit as a JSON literal, never String(obj) => "[object Object]"
+  for (const k of OBJECT_KEYS) if (cfg[k]) text = text.split('@@' + k + '@@').join(JSON.stringify(cfg[k]));
   // scalars — every remaining @@key@@
   for (const k of Object.keys(cfg)) {
-    if (k === 'prompt' || ARRAY_KEYS.includes(k)) continue;
+    if (k === 'prompt' || ARRAY_KEYS.includes(k) || OBJECT_KEYS.includes(k)) continue;
     text = text.split('@@' + k + '@@').join(String(cfg[k]));
   }
   return text;

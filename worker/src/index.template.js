@@ -38,7 +38,12 @@ const BUSINESS = {
   emergencyKeywords: @@emergencyKeywords@@,
   // service-area localities — used to detect whether an address carries a city so
   // Smarty can exact-match it (a bare street routes everything to the callback path)
-  serviceCities: @@serviceCities@@
+  serviceCities: @@serviceCities@@,
+  // Per-day hours + same-day rules. ENFORCED in checkAvailability: a closed day, an hour
+  // outside that day's window, a past-cutoff same-day request, or a too-late same-day start
+  // all come back BUSY. Emergencies bypass this entirely (they never touch the calendar).
+  // Omit this block and the worker falls back to businessStartH/businessEndH (old behavior).
+  schedule: @@schedule@@
 };
 
 export default {
@@ -200,17 +205,57 @@ async function getGoogleToken(env) {
 }
 
 // ============================================================================
-// TIME / DATE HELPERS  (unchanged logic)
+// TIME / DATE HELPERS
+//
+// NOTE: the `eastern*` names are LEGACY (this started as a single Eastern-timezone
+// client). The offset is now derived from BUSINESS.timezone, so these work for any
+// client timezone. The algorithm is unchanged — only the hardcoded "America/New_York"
+// became BUSINESS.timezone. For an Eastern client this is a no-op; for anyone else it
+// is the difference between booking the right hour and booking hours off.
 // ============================================================================
 function easternOffset(utcDate) {
   const noonUTC = new Date(Date.UTC(
     utcDate.getUTCFullYear(), utcDate.getUTCMonth(), utcDate.getUTCDate(), 12, 0, 0
   ));
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York", hour: "numeric", hour12: false
+    timeZone: BUSINESS.timezone, hour: "numeric", hour12: false
   }).formatToParts(noonUTC);
-  const easternNoon = parseInt(parts.find(p => p.type === "hour")?.value || "8");
-  return easternNoon - 12;
+  const localNoon = parseInt(parts.find(p => p.type === "hour")?.value || "8");
+  return localNoon - 12;
+}
+
+// --- Per-day schedule (BUSINESS.schedule). Falls back to businessStartH/businessEndH
+// --- when a config carries no schedule block, so older configs behave exactly as before.
+const DOW = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+function dowOf(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return DOW[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+}
+
+// Open/close hours for a given calendar date. { closed: true } => no normal bookings
+// that day (emergencies are unaffected — they never touch the calendar).
+function hoursForDate(dateStr) {
+  const sch = BUSINESS.schedule;
+  if (!sch || !sch.days) {
+    return { closed: false, open: BUSINESS.businessStartH, close: BUSINESS.businessEndH };
+  }
+  const day = sch.days[dowOf(dateStr)];
+  if (!day) return { closed: true, open: null, close: null };
+  return { closed: false, open: day.open, close: day.close };
+}
+
+function fmtHour(h) {
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hh = h % 12 === 0 ? 12 : h % 12;
+  return `${hh} ${ampm}`;
+}
+
+// Current wall-clock hour (fractional) in the business timezone.
+function localHourNow() {
+  const now = new Date();
+  const local = new Date(now.getTime() + easternOffset(now) * 3600000);
+  return local.getUTCHours() + local.getUTCMinutes() / 60;
 }
 
 function easternToUTC(dateStr, timeStr) {
@@ -298,11 +343,11 @@ function normalizePhone(rawPhone, fallback = null) {
 function handleGetDate() {
   const now = new Date();
   const formatted = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
+    timeZone: BUSINESS.timezone,
     weekday: "long", year: "numeric", month: "long", day: "numeric",
     hour: "numeric", minute: "2-digit", hour12: true
   }).format(now);
-  return { nowIso: now.toISOString(), localTime: formatted, timezone: "America/New_York" };
+  return { nowIso: now.toISOString(), localTime: formatted, timezone: BUSINESS.timezone };
 }
 
 async function handleCheckAvailability(params, env) {
@@ -361,8 +406,39 @@ async function handleCheckAvailability(params, env) {
   const localEndH = new Date(requestedEnd.getTime() + offset * 3600000).getUTCHours() +
     new Date(requestedEnd.getTime() + offset * 3600000).getUTCMinutes() / 60;
 
-  if (localStartH < BUSINESS.businessStartH || localEndH > BUSINESS.businessEndH) {
-    return { available: false, message: `We schedule between 7 AM and 7 PM Eastern.` };
+  // --- SCHEDULE ENFORCEMENT (was prompt-text only; the model could book a closed day) ---
+  // Fail closed: a day the client isn't open is BUSY, no matter what the model proposes.
+  // Emergencies are unaffected — they never reach this path (qualifyEmergency, no calendar).
+  const hrs = hoursForDate(requestedDate);
+  if (hrs.closed) {
+    return {
+      available: false,
+      message: `We're closed that day — let's find you another time.`
+    };
+  }
+  if (localStartH < hrs.open || localEndH > hrs.close) {
+    return {
+      available: false,
+      message: `We schedule between ${fmtHour(hrs.open)} and ${fmtHour(hrs.close)}.`
+    };
+  }
+
+  // Same-day rules: after the cutoff we don't take same-day work, and there's a latest
+  // same-day start. (No-ops when the config has no schedule block.)
+  const sch = BUSINESS.schedule || {};
+  if (requestedDate === easternDateStr(new Date())) {
+    if (sch.sameDayCutoffH != null && localHourNow() >= sch.sameDayCutoffH) {
+      return {
+        available: false,
+        message: `We're past our same-day cutoff — the soonest I can get you in is tomorrow.`
+      };
+    }
+    if (sch.latestSameDaySlotH != null && localStartH > sch.latestSameDaySlotH) {
+      return {
+        available: false,
+        message: `Our latest same-day appointment starts at ${fmtHour(sch.latestSameDaySlotH)}.`
+      };
+    }
   }
 
   const BUFFER_MS = BUSINESS.bufferMin * 60000;
@@ -376,8 +452,13 @@ async function handleCheckAvailability(params, env) {
     return { available: true, message: `Yes, ${requestedDate} at ${requestedTime} is available.` };
   }
 
+  // Alternatives must live inside THAT DAY's hours (not a fixed global window), and must
+  // not offer a same-day slot past the latest-same-day start.
+  const isToday = requestedDate === easternDateStr(new Date());
+  const latestStartH = (isToday && sch.latestSameDaySlotH != null) ? sch.latestSameDaySlotH : hrs.close;
   const alternatives = [];
-  for (let min = BUSINESS.businessStartH * 60; min <= BUSINESS.businessEndH * 60 - estimatedDuration; min += 30) {
+  for (let min = hrs.open * 60; min <= hrs.close * 60 - estimatedDuration; min += 30) {
+    if (min > latestStartH * 60) break;
     const h = String(Math.floor(min / 60)).padStart(2, "0");
     const m2 = String(min % 60).padStart(2, "0");
     const cStart = easternToUTC(requestedDate, `${h}:${m2}`);
@@ -385,7 +466,7 @@ async function handleCheckAvailability(params, env) {
     const free = !busyIntervals.some(iv => hasConflict(iv.start, iv.end, cStart, cEnd));
     if (free) {
       alternatives.push({
-        time: cStart.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/New_York" })
+        time: cStart.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: BUSINESS.timezone })
       });
       if (alternatives.length >= 3) break;
     }

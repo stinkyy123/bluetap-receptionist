@@ -66,10 +66,14 @@ These are business decisions, so it reports them — it doesn't "fix" them.
    green-light a deploy while `TODO` values remain.)
 4. `node render.js <client>` → review the dist → deploy (above) → run the QA scenarios.
 
-> ⚠️ Hours caveat: the worker enforces only `businessStartH`/`businessEndH`. Per-day rules
-> ("Sun emergencies only"), the same-day cutoff, latest slot, and min fee are **prompt-text
-> only** today — see BUILD-NOTES "Known limitations". `schedule` is in the config ready for
-> worker-side enforcement (next task).
+> ✅ **Hours are enforced server-side.** `checkAvailability` reads the `schedule` block and fails
+> closed on a closed day, an hour outside that day's window, a past-cutoff same-day request, or a
+> too-late same-day start. Emergencies bypass it (they never touch the calendar), so
+> `emergencyOnlyDays` still works. Omit `schedule` and it falls back to
+> `businessStartH`/`businessEndH`.
+>
+> ✅ **Timezone is client-driven.** Set `timezone` correctly — the worker's time math used to be
+> hardcoded to Eastern, which booked non-Eastern clients hours off. See BUILD-NOTES.
 
 Real client configs are **gitignored** (they contain client PII) — only the bluetap reference
 and the schema are committed. This repo is public: **never commit secrets** (BUILD-NOTES §8;

@@ -350,20 +350,26 @@ the reminder SMS (touch 2).
   route (returns the last few rows as JSON) is added, used, and then removed. It is
   currently **removed** — re-add it the same way if you need to inspect live rows, and
   delete it after.
-- **⚠️ Schedule + fee rules are PROMPT-TEXT ONLY — the Worker does NOT enforce them.** The
-  Worker enforces exactly two schedule facts: `businessStartH` and `businessEndH`. Everything
-  else a client tells you about their hours — **"Sun emergencies only", the same-day cutoff,
-  the latest same-day slot, the minimum fee** — lives only in the prompt's `FACTS` block. The
-  model is *asked* to respect them, but nothing checks: if it proposes a Sunday 8 AM slot,
-  `checkAvailability` will happily report it free and `bookAppointment` will book it. Treat
-  the prompt as advisory here, not as a constraint.
-  The client config now carries a structured `schedule` block (per-day `days`, `emergencyOnlyDays`,
-  `sameDayCutoffH`, `latestSameDaySlotH`, `minFee`, `minFeeWaivedWithRepair`) — **the Worker
-  does not read it yet.** It was added so the schema change happened once.
-  **NEXT TASK: worker-side enforcement of per-day schedule rules from `BUSINESS.schedule`** —
-  `checkAvailability` should treat closed days / post-cutoff / past-latest-slot as busy, and the
-  emergency path should stay open on `emergencyOnlyDays`. Until then, a client with anything more
-  complex than "same hours every day" is only *softly* protected.
+- **✅ Schedule is now ENFORCED server-side (was prompt-text only).** `checkAvailability` reads
+  `BUSINESS.schedule` and **fails closed**: a **closed day**, an hour outside **that day's**
+  open/close window, a same-day request **past `sameDayCutoffH`**, or a same-day start **later
+  than `latestSameDaySlotH`** all return busy — no matter what the model proposes. Offered
+  alternatives are constrained to the same window. **Emergencies are unaffected**: they route
+  through `qualifyEmergency` and never touch the calendar, so `emergencyOnlyDays` (e.g. Sunday)
+  still works. Omit the `schedule` block entirely and the Worker falls back to
+  `businessStartH`/`businessEndH` (the old behavior) — backward compatible.
+  ⚠️ **This changed BlueTap's live behavior:** Sunday was silently bookable before and is now
+  correctly refused, and the 4 PM same-day cutoff / 5 PM latest slot are now real. That is the
+  intended fix, but it IS a production behavior change — deploy it through the normal gates.
+  `minFee` / `minFeeWaivedWithRepair` remain prompt-text (they're quoting rules, not scheduling).
+- **✅ Timezone is now client-driven (was hardcoded Eastern — a silent booking corruption).**
+  `easternOffset()` used a hardcoded `"America/New_York"`, and `easternToUTC()` (which converts
+  EVERY booking, availability check and cancellation) inherited it — while calendar events were
+  written with `timeZone: BUSINESS.timezone`. For any non-Eastern client the two disagreed: a
+  Phoenix caller asking for **2 PM** was booked at **18:00Z = 11 AM local — three hours early.**
+  The offset now derives from `BUSINESS.timezone`. For an Eastern client this is a **no-op**
+  (verified: EDT offset −4 and 2 PM → 18:00Z, unchanged). The `eastern*` function names are
+  **legacy** — they are timezone-generic now; don't be fooled by the names.
 - **Config-logic traps are checked, not prevented.** `validate-config.js` flags the two that bite:
   an `emergencyKeyword` that also names a normal service (that service becomes unbookable — the
   guardrail reroutes it), and a `highTicketKeyword` that matches a cheap job (the "$199 faucet
