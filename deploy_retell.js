@@ -1,22 +1,28 @@
-// Deploy the v15 prompt + tool schema to the Retell LLM.
+// Deploy a client's rendered prompt + tool schema to their Retell LLM.
 // Tools stay pointed at the Cloudflare Worker (the canonical backend).
-// Usage: node deploy_retell_v15.js
+// Usage: node deploy_retell.js <client>   (run render.js <client> first)
 const https = require('https');
 const fs = require('fs');
+const path = require('path');
+
+// Config-driven: node deploy_retell.js <client>
+const client = process.argv[2];
+if (!client) { console.error('usage: node deploy_retell.js <client>'); process.exit(1); }
+const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'clients', client, 'config.json'), 'utf8'));
 
 // Credentials come from env, not source. Run with:
 //   $env:RETELL_API_KEY='...'; $env:TOOL_SECRET='...'; node deploy_retell_v15.js
 const RETELL_KEY = process.env.RETELL_API_KEY;
-const LLM_ID = 'llm_b87d28588b771499db90d726e1f7';
+const LLM_ID = cfg.retellLlmId;
 // Agent id for voice-config tuning (env override, falls back to the live agent).
-const AGENT_ID = process.env.RETELL_AGENT_ID || 'agent_a0816d675497be6750760cf772';
+const AGENT_ID = process.env.RETELL_AGENT_ID || cfg.retellAgentId;
 const TOOL_SECRET = process.env.TOOL_SECRET;
 if (!RETELL_KEY || !TOOL_SECRET) {
   console.error('Set RETELL_API_KEY and TOOL_SECRET environment variables first.');
   process.exit(1);
 }
 // Tool calls hit the authenticated secret path, not the bare worker root.
-const WORKER_URL = 'https://bluetap-receptionist.hbrks56.workers.dev/t/' + TOOL_SECRET;
+const WORKER_URL = cfg.baseUrl + '/t/' + TOOL_SECRET;
 
 const prompt = fs.readFileSync('C:\\Users\\hbrks\\OneDrive\\Desktop\\Receptionist\\vapi_live_prompt_v15.txt', 'utf8')
   .replace(/\{\{customer\.number\}\}/g, '{{from_number}}');

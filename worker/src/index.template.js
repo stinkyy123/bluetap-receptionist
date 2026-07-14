@@ -12,35 +12,33 @@
 // ============================================================================
 
 const BUSINESS = {
-  name: "BlueTap Plumbing & Drain",
-  shortName: "BlueTap Plumbing",
-  apptNoun: "appointment",
-  ownerName: "Mason Reed",
-  ownerPhone: "+12095529056",
-  calendarId: "hbrks56@gmail.com",
-  timezone: "America/New_York",
-  meetingMin: 90,
-  businessStartH: 7,
-  businessEndH: 19,
-  bufferMin: 30,
-  twilioFrom: "+14346615712",      // number we send from AND receive replies on
-  defaultState: "VA",
-  sheetTab: "Bookings",
-  baseUrl: "https://bluetap-receptionist.hbrks56.workers.dev",
-  noReplyTimeoutMin: 15,           // pending window before soft-confirm/flag
-  reminderLeadHours: 3,            // send the reminder SMS this long before the appt
+  name: "@@name@@",
+  shortName: "@@shortName@@",
+  apptNoun: "@@apptNoun@@",
+  ownerName: "@@ownerName@@",
+  ownerPhone: "@@ownerPhone@@",
+  calendarId: "@@calendarId@@",
+  timezone: "@@timezone@@",
+  meetingMin: @@meetingMin@@,
+  businessStartH: @@businessStartH@@,
+  businessEndH: @@businessEndH@@,
+  bufferMin: @@bufferMin@@,
+  twilioFrom: "@@twilioFrom@@",      // number we send from AND receive replies on
+  defaultState: "@@defaultState@@",
+  sheetTab: "@@sheetTab@@",
+  baseUrl: "@@baseUrl@@",
+  noReplyTimeoutMin: @@noReplyTimeoutMin@@,           // pending window before soft-confirm/flag
+  reminderLeadHours: @@reminderLeadHours@@,            // send the reminder SMS this long before the appt
   // services that always warrant a human glance before dispatch (high ticket).
   // NOTE: bare "replacement" was removed — it flagged $199 faucet/toilet swaps;
   // the genuinely expensive jobs are covered by the specific keywords below.
-  highTicketKeywords: ["water heater", "repipe", "main line", "hydrojet", "install"],
+  highTicketKeywords: @@highTicketKeywords@@,
   // an emergency must NEVER land on the calendar as a normal booking — if any of
   // these surface in a bookAppointment call, the backstage guardrail reroutes it
-  emergencyKeywords: ["flood", "flooding", "burst", "sewage", "gas smell", "gas leak",
-    "no water", "ceiling collaps", "backing up", "back up", "overflow", "sewer backup"],
+  emergencyKeywords: @@emergencyKeywords@@,
   // service-area localities — used to detect whether an address carries a city so
   // Smarty can exact-match it (a bare street routes everything to the callback path)
-  serviceCities: ["lynchburg", "forest", "madison heights", "timberlake",
-    "rustburg", "concord", "evington", "goode", "monroe"]
+  serviceCities: @@serviceCities@@
 };
 
 export default {

@@ -1,0 +1,66 @@
+{
+  "name": "BlueTap Plumbing & Drain",
+  "shortName": "BlueTap Plumbing",
+  "brand": "BlueTap",
+  "apptNoun": "appointment",
+  "ownerName": "Mason Reed",
+  "ownerFirstName": "Mason",
+  "ownerPhone": "+12095529056",
+  "agentDisplayName": "Taylor",
+  "serviceExamples": "clog, leak, no hot water",
+  "timezone": "America/New_York",
+  "calendarId": "hbrks56@gmail.com",
+  "meetingMin": 90,
+  "businessStartH": 7,
+  "businessEndH": 19,
+  "bufferMin": 30,
+  "twilioFrom": "+14346615712",
+  "defaultState": "VA",
+  "sheetTab": "Bookings",
+  "baseUrl": "https://bluetap-receptionist.hbrks56.workers.dev",
+  "noReplyTimeoutMin": 15,
+  "reminderLeadHours": 3,
+  "highTicketKeywords": [
+    "water heater",
+    "repipe",
+    "main line",
+    "hydrojet",
+    "install"
+  ],
+  "emergencyKeywords": [
+    "flood",
+    "flooding",
+    "burst",
+    "sewage",
+    "gas smell",
+    "gas leak",
+    "no water",
+    "ceiling collaps",
+    "backing up",
+    "back up",
+    "overflow",
+    "sewer backup"
+  ],
+  "serviceCities": [
+    "lynchburg",
+    "forest",
+    "madison heights",
+    "timberlake",
+    "rustburg",
+    "concord",
+    "evington",
+    "goode",
+    "monroe"
+  ],
+  "sheetsId": "1fi44BbfsX68CcPGhn99gulCccCuAV3b4ywzWPTREK6E",
+  "workerName": "bluetap-receptionist",
+  "retellLlmId": "llm_b87d28588b771499db90d726e1f7",
+  "retellAgentId": "agent_a0816d675497be6750760cf772",
+  "prompt": {
+    "factsLines": [
+      "- Hours: Mon–Sat 7AM–7PM; Sun emergencies only. Service area: Lynchburg, Forest, Madison Heights, Timberlake VA (ZIP 24501–24506).",
+      "- Same-day cutoff 4PM; latest same-day slot 5PM; 30-min buffer; $79 min fee (waived with repair)."
+    ],
+    "pricingLine": "Drain clear $189 · Main line auger $349 / hydrojet $499 (+$150 on-site) · Toilet repair $189+parts / replace $349 customer-unit / $649 BlueTap · Leak diagnosis+minor repair $249+parts (+$79/extra point) · Water heater repair $249+parts / replace 40–50gal $1,399 (+$149 expansion tank) · Garbage disposal $199 / $349 · Faucet/fixture $199 / $349 · Add-ons (offer once): camera +$79, bio-enzyme +$39, tank flush +$99, water test +$49, maintenance $12/mo."
+  }
+}

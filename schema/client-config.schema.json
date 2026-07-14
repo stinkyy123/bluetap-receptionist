@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Receptionist client config",
+  "description": "Every client-specific value for a receptionist build. render.js merges this into the prompt, worker BUSINESS block, and wrangler. Source of field meanings: BUILD-NOTES.md sections 5 & 7.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name", "shortName", "brand", "apptNoun", "ownerName", "ownerFirstName",
+    "ownerPhone", "agentDisplayName", "serviceExamples", "timezone", "calendarId",
+    "meetingMin", "businessStartH", "businessEndH", "bufferMin", "twilioFrom",
+    "defaultState", "sheetTab", "baseUrl", "noReplyTimeoutMin", "reminderLeadHours",
+    "highTicketKeywords", "emergencyKeywords", "serviceCities",
+    "sheetsId", "workerName", "retellLlmId", "retellAgentId", "prompt"
+  ],
+  "properties": {
+    "name": { "type": "string", "description": "Full legal/brand business name, e.g. 'BlueTap Plumbing & Drain'." },
+    "shortName": { "type": "string", "description": "Conversational name used in the greeting." },
+    "brand": { "type": "string", "description": "Bare brand token, e.g. 'BlueTap' (used in 'X's virtual assistant')." },
+    "apptNoun": { "type": "string", "description": "What a booking is called, e.g. 'appointment'." },
+    "ownerName": { "type": "string", "description": "Owner full name." },
+    "ownerFirstName": { "type": "string", "description": "Owner first name used in off-path routes." },
+    "ownerPhone": { "type": "string", "description": "Owner mobile in E.164 (owner alert SMS)." },
+    "agentDisplayName": { "type": "string", "description": "The receptionist's persona name, e.g. 'Taylor'." },
+    "serviceExamples": { "type": "string", "description": "Trade service examples in the opener, e.g. 'clog, leak, no hot water'." },
+    "timezone": { "type": "string", "description": "IANA tz, e.g. 'America/New_York'." },
+    "calendarId": { "type": "string", "description": "Google Calendar id the worker books into (client-owned)." },
+    "meetingMin": { "type": "integer", "description": "Default appointment length in minutes." },
+    "businessStartH": { "type": "integer", "minimum": 0, "maximum": 23 },
+    "businessEndH": { "type": "integer", "minimum": 0, "maximum": 23 },
+    "bufferMin": { "type": "integer", "description": "Buffer between jobs, minutes." },
+    "twilioFrom": { "type": "string", "description": "Twilio number (E.164) SMS sends from AND receives on." },
+    "defaultState": { "type": "string", "description": "2-letter state appended for Smarty when caller omits it." },
+    "sheetTab": { "type": "string", "description": "Bookings/VA-queue tab name in the sheet." },
+    "baseUrl": { "type": "string", "format": "uri", "description": "Deployed worker base URL (no trailing slash)." },
+    "noReplyTimeoutMin": { "type": "integer", "description": "Pending window before soft-confirm/flag." },
+    "reminderLeadHours": { "type": "integer", "description": "Reminder SMS lead time before appt." },
+    "highTicketKeywords": { "type": "array", "items": { "type": "string" }, "description": "Services warranting a human glance (high ticket)." },
+    "emergencyKeywords": { "type": "array", "items": { "type": "string" }, "description": "Words that force the emergency guardrail (never calendar-booked)." },
+    "serviceCities": { "type": "array", "items": { "type": "string" }, "description": "Lowercase service-area localities for address locality detection." },
+    "sheetsId": { "type": "string", "description": "Google Sheets spreadsheet id (wrangler SHEETS_ID)." },
+    "workerName": { "type": "string", "description": "Cloudflare Worker name (wrangler `name`)." },
+    "retellLlmId": { "type": "string", "description": "Retell LLM id the deploy script pushes to." },
+    "retellAgentId": { "type": "string", "description": "Retell agent id patched + published + re-pinned." },
+    "prompt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["factsLines", "pricingLine"],
+      "description": "Prompt-only content blocks (structured, formatted into the prompt template).",
+      "properties": {
+        "factsLines": { "type": "array", "items": { "type": "string" }, "description": "The FACTS bullet lines (hours, service area, cutoffs, min fee)." },
+        "pricingLine": { "type": "string", "description": "The single PRICING line (services joined by ' · ')." }
+      }
+    }
+  }
+}

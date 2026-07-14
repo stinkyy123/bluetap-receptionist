@@ -26,3 +26,13 @@ checkavail_compute_new.js
 # os / editor
 .DS_Store
 Thumbs.db
+
+# render output
+clients/*/dist/
+# local diff reference
+*.orig.js
+
+# receptionist config: commit the schema + the bluetap reference only.
+# Real client configs contain client PII and must NOT be pushed to a public repo.
+!schema/client-config.schema.json
+!clients/bluetap/config.json
