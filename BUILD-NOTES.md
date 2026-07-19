@@ -5,6 +5,19 @@ Claude Code session (or a human) picking this up cold, read this **before** touc
 anything. The code is clean but a lot of the *why* — and the deploy landmines — live
 only here. Every rule below exists because something broke; the incidents are noted.
 
+> ### ⚠️ COORDINATION — this repo has more than one automated writer
+> Both an interactive Claude Code session **and** the `build-agent`
+> ([agentic-workflow](https://github.com/stinkyy123/agentic-workflow)) deploy to the **same
+> live worker and the same Retell agent** (`agent_a0816d675497be6750760cf772`).
+> **Single-writer rule: only one agent runs worker/Retell deploys at a time.** Concurrent
+> Retell publishes already wedged the agent once into a "published, no-draft" state that the
+> API can't edit (see the LLM-wedge note in §6; recovery = one manual dashboard edit). Before
+> you deploy: `git fetch` and reconcile — the worker is now the **template render**
+> (`node render.js <client>` → `clients/<client>/dist/worker`), NOT the old `worker/src/index.js`.
+> **Current live state (2026-07-19):** worker = latest template render (incl. exact-date
+> `getDate`); Retell agent **v80** published + phone-pinned; interruption 0.3, backchannel off,
+> ambient off. If you change any of these, update this line.
+
 Repo layout:
 - `worker/src/index.js` — the entire backend, ~1300 lines, single file on purpose (latency + one deploy artifact).
 - `worker/wrangler.toml` — Worker config + cron; documents secret names.
