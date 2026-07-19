@@ -15,7 +15,7 @@ only here. Every rule below exists because something broke; the incidents are no
 > you deploy: `git fetch` and reconcile — the worker is now the **template render**
 > (`node render.js <client>` → `clients/<client>/dist/worker`), NOT the old `worker/src/index.js`.
 > **Current live state (2026-07-19):** worker = latest template render (incl. exact-date
-> `getDate`); Retell agent **v82** published + phone-pinned; interruption 0.3, backchannel off,
+> `getDate`); Retell agent **v83** published + phone-pinned; interruption 0.3, backchannel off,
 > ambient off. If you change any of these, update this line.
 
 Repo layout:
